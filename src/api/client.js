@@ -1,5 +1,16 @@
 // API client for Express backend
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const resolveApiBaseUrl = () => {
+  const configuredUrl = import.meta.env.VITE_API_URL?.trim();
+
+  if (!configuredUrl) {
+    return 'http://localhost:5001/api';
+  }
+
+  const normalizedUrl = configuredUrl.replace(/\/+$/, '');
+  return normalizedUrl.endsWith('/api') ? normalizedUrl : `${normalizedUrl}/api`;
+};
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 export class ApiClient {
   constructor() {
