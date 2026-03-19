@@ -4,8 +4,15 @@ export const recordingService = {
   // Upload recording to Express backend
   async uploadRecording(blob, fileName, userId) {
     try {
+      if (!blob || blob.size <= 0) {
+        throw new Error('Recording is empty. Please record for at least a few seconds before uploading.');
+      }
+
+      const normalizedType = blob.type?.startsWith('video/') ? blob.type : 'video/webm';
+      const uploadFile = new File([blob], fileName, { type: normalizedType });
+
       const formData = new FormData();
-      formData.append('recording', blob, fileName);
+      formData.append('recording', uploadFile);
       formData.append('title', fileName.replace(/\.[^/.]+$/, "")); // Remove extension for title
       formData.append('duration', '0'); // Will be updated by client if needed
 

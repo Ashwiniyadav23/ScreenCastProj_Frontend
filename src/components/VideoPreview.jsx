@@ -37,7 +37,8 @@ const VideoPreview = ({ videoUrl, videoBlob, onDiscard, onUploadSuccess }) => {
 
     setUploading(true);
     try {
-      const fileName = `${recordingTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-${new Date().toISOString()}.webm`;
+      const safeTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `${recordingTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-${safeTimestamp}.webm`;
       
       const recording = await recordingService.uploadRecording(
         videoBlob,

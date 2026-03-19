@@ -98,9 +98,21 @@ export const useMediaRecorder = (options = {}) => {
 
       const combinedStream = new MediaStream(tracks);
 
-      const mediaRecorder = new MediaRecorder(combinedStream, {
-        mimeType: "video/webm;codecs=vp9",
-      });
+      const preferredMimeTypes = [
+        "video/webm;codecs=vp9,opus",
+        "video/webm;codecs=vp8,opus",
+        "video/webm;codecs=vp8",
+        "video/webm",
+      ];
+
+      const selectedMimeType = preferredMimeTypes.find((mimeType) =>
+        MediaRecorder.isTypeSupported(mimeType)
+      );
+
+      const mediaRecorderOptions = selectedMimeType ? { mimeType: selectedMimeType } : undefined;
+      const mediaRecorder = mediaRecorderOptions
+        ? new MediaRecorder(combinedStream, mediaRecorderOptions)
+        : new MediaRecorder(combinedStream);
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -109,7 +121,8 @@ export const useMediaRecorder = (options = {}) => {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "video/webm" });
+        const chunkType = chunksRef.current[0]?.type || selectedMimeType || "video/webm";
+        const blob = new Blob(chunksRef.current, { type: chunkType });
         setRecordedBlob(blob);
         setRecordedUrl(URL.createObjectURL(blob));
         cleanupStreams();

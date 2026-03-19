@@ -1,10 +1,17 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
+import SEO from "@/components/SEO";
 import { Monitor, Mic, Video, Download, Cloud, Share2, Shield, Zap, Users } from "lucide-react";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Screen Recorder with Audio & Webcam"
+        description="Record your screen, microphone, and webcam in one place. Upload, manage, and share recordings with ScreenCast Pro."
+        path="/"
+        keywords="screen recorder, webcam recorder, voice recorder, online screen recording, screencast tool"
+      />
       <Navbar />
       <Hero />
 

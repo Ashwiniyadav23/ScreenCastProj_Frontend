@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth.jsx";
+import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,6 +75,15 @@ const Auth = () => {
       }
     } catch (error) {
       console.error(isLogin ? "Login error:" : "Registration error:", error);
+
+      if (!isLogin && error?.message === "User already exists with this email") {
+        setIsLogin(true);
+        toast({
+          title: "Account already exists",
+          description: "Please sign in with this email and password.",
+        });
+        return;
+      }
       
       toast({
         title: isLogin ? "Login Failed" : "Registration Failed",
@@ -87,6 +97,12 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <SEO
+        title={isLogin ? "Login" : "Create Account"}
+        description="Sign in to ScreenCast Pro to manage recordings, upload videos, and share your screen content."
+        path="/auth"
+        noindex
+      />
       {/* Header */}
       <header className="p-4">
         <a href="/" className="flex items-center gap-2 w-fit">

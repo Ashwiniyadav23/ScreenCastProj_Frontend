@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
+import SEO from "@/components/SEO";
 import RecordingControls from "@/components/RecordingControls";
 import VideoPreview from "@/components/VideoPreview";
 import WebcamPreview from "@/components/WebcamPreview";
@@ -71,6 +72,12 @@ const Record = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
+      <SEO
+        title="Record Screen"
+        description="Start recording your screen, audio, and webcam. Create tutorials, demos, and presentations in minutes."
+        path="/record"
+        noindex
+      />
       <Navbar />
 
       <main className="pt-24 pb-12 px-4">

@@ -3,10 +3,14 @@ const resolveApiBaseUrl = () => {
   const configuredUrl = import.meta.env.VITE_API_URL?.trim();
 
   if (!configuredUrl) {
-    return 'http://localhost:5001/api';
+    return 'http://localhost:5000/api';
   }
 
-  const normalizedUrl = configuredUrl.replace(/\/+$/, '');
+  const normalizedUrl = configuredUrl
+    .replace(/\/+$/, '')
+    .replace(/\/api\/index(\.js)?$/i, '')
+    .replace(/\/index(\.js)?$/i, '');
+
   return normalizedUrl.endsWith('/api') ? normalizedUrl : `${normalizedUrl}/api`;
 };
 
@@ -64,8 +68,22 @@ export class ApiClient {
       const response = await fetch(url, config);
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Network error' }));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        const contentType = response.headers.get('content-type') || '';
+        let errorMessage = `Request failed with status ${response.status}`;
+
+        if (contentType.includes('application/json')) {
+          const errorData = await response.json().catch(() => null);
+          if (errorData?.message) {
+            errorMessage = errorData.message;
+          }
+        } else {
+          const text = await response.text().catch(() => '');
+          if (text && !text.includes('<!doctype html>')) {
+            errorMessage = text;
+          }
+        }
+
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -128,8 +146,22 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Upload failed' }));
-      throw new Error(errorData.message || 'Upload failed');
+      const contentType = response.headers.get('content-type') || '';
+      let errorMessage = `Upload failed with status ${response.status}`;
+
+      if (contentType.includes('application/json')) {
+        const errorData = await response.json().catch(() => null);
+        if (errorData?.message) {
+          errorMessage = errorData.message;
+        }
+      } else {
+        const text = await response.text().catch(() => '');
+        if (text && !text.includes('<!doctype html>')) {
+          errorMessage = text;
+        }
+      }
+
+      throw new Error(errorMessage);
     }
 
     return response.json();

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
+import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -119,16 +120,26 @@ const Dashboard = () => {
   };
 
   const handleShare = async (recording) => {
+    const shareUrl = recording.public_url || recording.url;
+    if (!shareUrl) {
+      toast({
+        title: "Unable to share",
+        description: "Recording URL is missing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: recording.title,
           text: "Check out my screen recording!",
-          url: recording.public_url,
+          url: shareUrl,
         });
       } catch (err) {
         if (err.name !== "AbortError") {
-          navigator.clipboard.writeText(recording.public_url);
+          navigator.clipboard.writeText(shareUrl);
           toast({
             title: "Link Copied",
             description: "Shareable link copied to clipboard.",
@@ -136,7 +147,7 @@ const Dashboard = () => {
         }
       }
     } else {
-      navigator.clipboard.writeText(recording.public_url);
+      navigator.clipboard.writeText(shareUrl);
       toast({
         title: "Link Copied",
         description: "Shareable link copied to clipboard.",
@@ -167,6 +178,12 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Dashboard"
+        description="Manage, preview, and share your recordings from the ScreenCast Pro dashboard."
+        path="/dashboard"
+        noindex
+      />
       <Navbar />
 
       <main className="pt-24 pb-12 px-4">
@@ -440,6 +457,7 @@ const RecordingCard = ({ recording, onDelete, onShare, deleting, viewMode = "gri
   };
 
   const recordingId = recording.id || recording._id;
+  const recordingUrl = recording.public_url || recording.url;
 
   const saveTitle = async () => {
     try {
@@ -525,7 +543,7 @@ const RecordingCard = ({ recording, onDelete, onShare, deleting, viewMode = "gri
                 </DialogHeader>
                 <div className="aspect-video bg-muted rounded-lg">
                   <video
-                    src={recording.public_url}
+                    src={recordingUrl}
                     controls
                     className="w-full h-full rounded-lg"
                   />
@@ -533,7 +551,7 @@ const RecordingCard = ({ recording, onDelete, onShare, deleting, viewMode = "gri
               </DialogContent>
             </Dialog>
 
-            <a href={recording.public_url} target="_blank" rel="noopener noreferrer">
+            <a href={recordingUrl} target="_blank" rel="noopener noreferrer">
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <Download className="h-4 w-4" />
               </Button>
@@ -591,7 +609,7 @@ const RecordingCard = ({ recording, onDelete, onShare, deleting, viewMode = "gri
                 </DialogHeader>
                 <div className="aspect-video bg-muted rounded-lg">
                   <video
-                    src={recording.public_url}
+                    src={recordingUrl}
                     controls
                     className="w-full h-full rounded-lg"
                   />
@@ -666,7 +684,7 @@ const RecordingCard = ({ recording, onDelete, onShare, deleting, viewMode = "gri
         {/* Enhanced Actions */}
         <div className="flex items-center gap-2">
           <a
-            href={recording.public_url}
+            href={recordingUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1"
