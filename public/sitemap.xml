@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://screencastpro.app/</loc>
+    <loc>https://screen-cast-proj-frontend.vercel.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://screencastpro.app/auth</loc>
+    <loc>https://screen-cast-proj-frontend.vercel.app/auth</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://screencastpro.app/record</loc>
+    <loc>https://screen-cast-proj-frontend.vercel.app/record</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://screencastpro.app/dashboard</loc>
+    <loc>https://screen-cast-proj-frontend.vercel.app/dashboard</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>

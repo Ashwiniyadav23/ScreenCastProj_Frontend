@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://screencastpro.app/sitemap.xml
+Sitemap: https://screen-cast-proj-frontend.vercel.app/sitemap.xml

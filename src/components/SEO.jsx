@@ -1,7 +1,7 @@
 import { Helmet } from "react-helmet-async";
 
 const SITE_NAME = "ScreenCast Pro";
-const SITE_URL = "https://screencastpro.app";
+const SITE_URL = (import.meta.env.VITE_SITE_URL || "https://screen-cast-proj-frontend.vercel.app").replace(/\/+$/, "");
 const DEFAULT_IMAGE = "https://lovable.dev/opengraph-image-p98pqg.png";
 
 const SEO = ({
