@@ -13,9 +13,17 @@ export const useMediaRecorder = (options = {}) => {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
+  
+  // Stream refs
   const screenStreamRef = useRef(null);
   const audioStreamRef = useRef(null);
   const webcamStreamRef = useRef(null);
+  
+  // Canvas/Drawing refs
+  const canvasRef = useRef(null);
+  const screenVideoRef = useRef(null);
+  const webcamVideoRef = useRef(null);
+  const animationFrameRef = useRef(null);
 
   const startTimer = useCallback(() => {
     timerRef.current = setInterval(() => {
@@ -31,6 +39,29 @@ export const useMediaRecorder = (options = {}) => {
   }, []);
 
   const cleanupStreams = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
+    if (screenVideoRef.current) {
+      screenVideoRef.current.pause();
+      screenVideoRef.current.srcObject = null;
+      if (screenVideoRef.current.parentNode) {
+        screenVideoRef.current.parentNode.removeChild(screenVideoRef.current);
+      }
+      screenVideoRef.current = null;
+    }
+    
+    if (webcamVideoRef.current) {
+      webcamVideoRef.current.pause();
+      webcamVideoRef.current.srcObject = null;
+      if (webcamVideoRef.current.parentNode) {
+        webcamVideoRef.current.parentNode.removeChild(webcamVideoRef.current);
+      }
+      webcamVideoRef.current = null;
+    }
+
     if (screenStreamRef.current) {
       screenStreamRef.current.getTracks().forEach((track) => track.stop());
       screenStreamRef.current = null;
@@ -58,7 +89,7 @@ export const useMediaRecorder = (options = {}) => {
       });
       screenStreamRef.current = screenStream;
 
-      const tracks = [...screenStream.getVideoTracks()];
+      const audioTracks = [];
 
       // Get audio stream if enabled
       if (includeAudio) {
@@ -71,7 +102,7 @@ export const useMediaRecorder = (options = {}) => {
             },
           });
           audioStreamRef.current = audioStream;
-          tracks.push(...audioStream.getAudioTracks());
+          audioTracks.push(...audioStream.getAudioTracks());
         } catch (audioErr) {
           console.warn("Could not access microphone:", audioErr);
         }
@@ -80,14 +111,14 @@ export const useMediaRecorder = (options = {}) => {
       // Add system audio from screen share if available
       const screenAudioTracks = screenStream.getAudioTracks();
       if (screenAudioTracks.length > 0) {
-        tracks.push(...screenAudioTracks);
+        audioTracks.push(...screenAudioTracks);
       }
 
       // Get webcam stream if enabled
       if (includeWebcam) {
         try {
           const webcamStreamData = await navigator.mediaDevices.getUserMedia({
-            video: { width: 320, height: 240, facingMode: "user" },
+            video: { width: 1280, height: 720, facingMode: "user" },
           });
           webcamStreamRef.current = webcamStreamData;
           setWebcamStream(webcamStreamData);
@@ -96,7 +127,107 @@ export const useMediaRecorder = (options = {}) => {
         }
       }
 
-      const combinedStream = new MediaStream(tracks);
+      // === CANVAS MERGING LOGIC ===
+      // Setup hidden video elements
+      const screenVideo = document.createElement("video");
+      screenVideo.srcObject = screenStream;
+      screenVideo.muted = true;
+      screenVideo.playsInline = true;
+      screenVideo.autoplay = true;
+      Object.assign(screenVideo.style, {
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        width: '1px',
+        height: '1px',
+        opacity: '0',
+        pointerEvents: 'none'
+      });
+      document.body.appendChild(screenVideo);
+      screenVideo.play().catch(console.error);
+      screenVideoRef.current = screenVideo;
+
+      // Wait for screen video to have metadata to set canvas size
+      await new Promise((resolve) => {
+        screenVideo.onloadedmetadata = () => resolve();
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = screenVideo.videoWidth;
+      canvas.height = screenVideo.videoHeight;
+      const ctx = canvas.getContext("2d");
+      canvasRef.current = canvas;
+
+      let webcamVideo = null;
+      if (includeWebcam && webcamStreamRef.current) {
+        webcamVideo = document.createElement("video");
+        webcamVideo.srcObject = webcamStreamRef.current;
+        webcamVideo.muted = true;
+        webcamVideo.playsInline = true;
+        webcamVideo.autoplay = true;
+        Object.assign(webcamVideo.style, {
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          width: '1px',
+          height: '1px',
+          opacity: '0',
+          pointerEvents: 'none'
+        });
+        document.body.appendChild(webcamVideo);
+        webcamVideo.play().catch(console.error);
+        webcamVideoRef.current = webcamVideo;
+        
+        // Wait for webcam metadata as well to know its aspect ratio
+        await new Promise((resolve) => {
+          webcamVideo.onloadedmetadata = () => resolve();
+        });
+      }
+
+      const drawFrame = () => {
+        if (!ctx) return;
+        
+        // Draw screen stream
+        if (screenVideo.readyState >= 2) {
+          ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+        }
+
+        // Draw webcam stream as Picture-in-Picture in bottom right
+        if (webcamVideo && webcamVideo.readyState >= 2) {
+          const padding = 20;
+          // Make webcam 20% of the canvas width
+          const camWidth = canvas.width * 0.2;
+          const camHeight = (webcamVideo.videoHeight / webcamVideo.videoWidth) * camWidth;
+          
+          const x = canvas.width - camWidth - padding;
+          const y = canvas.height - camHeight - padding;
+
+          // Draw a small border/shadow for webcam
+          ctx.save();
+          ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
+          ctx.shadowBlur = 10;
+          ctx.shadowOffsetX = 2;
+          ctx.shadowOffsetY = 2;
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = "white";
+          ctx.strokeRect(x, y, camWidth, camHeight);
+          ctx.drawImage(webcamVideo, x, y, camWidth, camHeight);
+          ctx.restore();
+        }
+
+        animationFrameRef.current = requestAnimationFrame(drawFrame);
+      };
+
+      // Start drawing loop
+      drawFrame();
+
+      // Capture stream from canvas at 30fps
+      const canvasStream = canvas.captureStream(30);
+      const videoTracks = canvasStream.getVideoTracks();
+
+      // Combine video from canvas and audio tracks
+      const combinedTracks = [...videoTracks, ...audioTracks];
+      const combinedStream = new MediaStream(combinedTracks);
 
       const preferredMimeTypes = [
         "video/webm;codecs=vp9,opus",
